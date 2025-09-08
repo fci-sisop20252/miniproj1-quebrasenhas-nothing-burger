@@ -132,12 +132,38 @@ int main(int argc, char *argv[]) {
     // IMPLEMENTE AQUI: Loop para criar workers
     for (int i = 0; i < num_workers; i++) {
         // TODO: Calcular intervalo de senhas para este worker
+        long long start_index = i * passwords_per_worker + (i < remaining ? i : remaining);
+        long long count = passwords_per_worker + (i < remaining ? 1 : 0);
+        long long end_index = start_index + count - 1;
         // TODO: Converter indices para senhas de inicio e fim
+        char start_password[password_len + 1];
+        char end_password[password_len + 1];
+        index_to_password(start_index, charset, charset_len, password_len, start_password);
+        index_to_password(end_index, charset, charset_len, password_len, end_password);
         // TODO 4: Usar fork() para criar processo filho
-        // TODO 5: No processo pai: armazenar PID
-        // TODO 6: No processo filho: usar execl() para executar worker
-        // TODO 7: Tratar erros de fork() e execl()
+        pid_t pid = fork();
+        // TODO 7: Tratar erros de fork()
+        if (pid < 0) {
+            perror("fork");
+            exit(1);
+        }
+        if (pid > 0) {
+            // TODO 5: No processo pai: armazenar PID
+            workers[i] = pid;
+            printf("[Coordinator] Worker %d criado com PID %d, intervalo: %s - %s\n", i, pid, start_password, end_password);
+        } else {
+            // TODO 6: No processo filho: usar execl() para executar worker
+            char worker_id_str[10];
+            char password_len_str[10];
+            sprintf(worker_id_str, "%d", i);
+            sprintf(password_len_str, "%d", password_len);
+            execl("./worker", "worker", target_hash, start_password, end_password, charset, password_len_str, worker_id_str, (char *)NULL);
+            // TODO 7: Tratar erros de execl()
+            perror("execl");
+            exit(1);
+        }
     }
+
     
     printf("\nTodos os workers foram iniciados. Aguardando conclusão...\n");
     
