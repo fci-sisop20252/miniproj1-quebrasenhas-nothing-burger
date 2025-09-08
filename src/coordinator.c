@@ -68,9 +68,9 @@ int main(int argc, char *argv[]) {
     
     // IMPLEMENTE AQUI: verificação de argc e mensagem de erro
     if (argc != 5) {
-    fprintf(stderr, "Uso: %s <hash_md5> <tamanho> <charset> <num_workers>\n", argv[0]);
-    return 1;
-}
+        fprintf(stderr, "Uso: %s <hash_md5> <tamanho> <charset> <num_workers>\n", argv[0]);
+        return 1;
+    }
 
     
     
@@ -85,6 +85,19 @@ int main(int argc, char *argv[]) {
     // - password_len deve estar entre 1 e 10
     // - num_workers deve estar entre 1 e MAX_WORKERS
     // - charset não pode ser vazio
+    if (password_len < 1 || password_len > 10) {
+    fprintf(stderr, "Erro: tamanho da senha deve estar entre 1 e 10.\n");
+    return 1;
+    }
+    if (num_workers < 1 || num_workers > MAX_WORKERS) {
+        fprintf(stderr, "Erro: número de workers deve estar entre 1 e %d.\n", MAX_WORKERS);
+        return 1;
+    }
+    if (charset_len == 0) {
+        fprintf(stderr, "Erro: charset não pode ser vazio.\n");
+        return 1;
+    }
+
     
     printf("=== Mini-Projeto 1: Quebra de Senhas Paralelo ===\n");
     printf("Hash MD5 alvo: %s\n", target_hash);
@@ -107,8 +120,8 @@ int main(int argc, char *argv[]) {
     // DICA: Use divisão inteira e distribua o resto entre os primeiros workers
     
     // IMPLEMENTE AQUI:
-    // long long passwords_per_worker = ?
-    // long long remaining = ?
+    long long passwords_per_worker = total_space / num_workers;
+    long long remaining = total_space % num_workers;
     
     // Arrays para armazenar PIDs dos workers
     pid_t workers[MAX_WORKERS];
