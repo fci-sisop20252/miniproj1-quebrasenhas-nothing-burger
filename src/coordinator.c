@@ -171,11 +171,73 @@ int main(int argc, char *argv[]) {
     // IMPORTANTE: O pai deve aguardar TODOS os filhos para evitar zumbis
     
     // IMPLEMENTE AQUI:
-    // - Loop para aguardar cada worker terminar
-    // - Usar wait() para capturar status de saída
-    // - Identificar qual worker terminou
-    // - Verificar se terminou normalmente ou com erro
-    // - Contar quantos workers terminaram
+   // TODO 8: Aguardar todos os workers terminarem usando wait()
+// IMPORTANTE: O pai deve aguardar TODOS os filhos para evitar zumbis
+
+int workers_finished = 0;
+int workers_with_success = 0;
+
+for (int i = 0; i < num_workers; i++) {
+    int status;
+    pid_t finished_pid = wait(&status);
+    
+    if (finished_pid == -1) {
+        perror("wait");
+        continue;
+    }
+    
+    // Identificar qual worker terminou
+    int worker_index = -1;
+    for (int j = 0; j < num_workers; j++) {
+        if (workers[j] == finished_pid) {
+            worker_index = j;
+            break;
+        }
+    }
+    
+    workers_finished++;
+    
+    // Verificar se terminou normalmente
+    if (WIFEXITED(status)) {
+        int exit_code = WEXITSTATUS(status);
+        
+        if (worker_index != -1) {
+            printf("[Coordinator] Worker %d (PID %d) terminou normalmente com código %d\n", 
+                   worker_index, finished_pid, exit_code);
+        } else {
+            printf("[Coordinator] Worker desconhecido (PID %d) terminou com código %d\n", 
+                   finished_pid, exit_code);
+        }
+        
+        // Código 0 indica sucesso (senha encontrada)
+        if (exit_code == 0) {
+            workers_with_success++;
+            printf("[Coordinator] Worker %d encontrou a senha!\n", worker_index);
+        }
+    } else if (WIFSIGNALED(status)) {
+        int signal_num = WTERMSIG(status);
+        if (worker_index != -1) {
+            printf("[Coordinator] Worker %d (PID %d) foi terminado pelo sinal %d\n", 
+                   worker_index, finished_pid, signal_num);
+        } else {
+            printf("[Coordinator] Worker desconhecido (PID %d) foi terminado pelo sinal %d\n", 
+                   finished_pid, signal_num);
+        }
+    } else {
+        if (worker_index != -1) {
+            printf("[Coordinator] Worker %d (PID %d) terminou de forma anômala\n", 
+                   worker_index, finished_pid);
+        } else {
+            printf("[Coordinator] Worker desconhecido (PID %d) terminou de forma anômala\n", 
+                   finished_pid);
+        }
+    }
+}
+
+printf("\n[Coordinator] Todos os %d workers terminaram.\n", workers_finished);
+if (workers_with_success > 0) {
+    printf("[Coordinator] %d worker(s) reportaram sucesso.\n", workers_with_success);
+}
     
     // Registrar tempo de fim
     time_t end_time = time(NULL);
