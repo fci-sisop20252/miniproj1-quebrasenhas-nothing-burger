@@ -254,7 +254,7 @@ if (workers_with_success > 0) {
     // - Fazer parse do formato "worker_id:password"
     // - Verificar o hash usando md5_string()
     // - Exibir resultado encontrado
-    if (password_found) {
+    if (access("password_found.txt", F_OK) == 0) {
         FILE *result_file = fopen(RESULT_FILE, "r");
         if (result_file != NULL) {
             char line[512];
