@@ -45,8 +45,26 @@ int increment_password(char *password, const char *charset, int charset_len, int
     // - Se não estourou: atualizar caractere e retornar 1
     // - Se estourou: definir como primeiro caractere e continuar loop
     // - Se todos estouraram: retornar 0 (fim do espaço)
+    for (int i = password_len - 1; i >= 0; i--) {
+        int idx_atual = -1;
+        for (int j = 0; j < charset_len; j++) {
+            if (password[i] == charset[j]) {
+                idx_atual = j;
+                break;
+            }
+        }  
+        if (idx_atual == -1) {
+            return 0;
+        }
+        idx_atual++;
+        if (idx_atual < charset_len) {
+            password[i] = charset[idx_atual];
+            return 1; 
+        }
+        password[i] = charset[0];
+    }
     
-    return 0;  // SUBSTITUA por sua implementação
+    return 0;
 }
 
 /**
@@ -80,6 +98,17 @@ void save_result(int worker_id, const char *password) {
     // - Tentar abrir arquivo com O_CREAT | O_EXCL | O_WRONLY
     // - Se sucesso: escrever resultado e fechar
     // - Se falhou: outro worker já encontrou
+    // Tentar criar arquivo atomicamente (falha se já existe)
+    int fd = open(RESULT_FILE, O_CREAT | O_EXCL | O_WRONLY, 0644);
+    if (fd != -1) {
+        char buffer[512];
+        int len = snprintf(buffer, sizeof(buffer), "%d:%s\n", worker_id, password);
+
+        write(fd, buffer, len);
+        close(fd);
+    } else {
+        printf("arquivo já existe\n");
+    }
 }
 
 /**

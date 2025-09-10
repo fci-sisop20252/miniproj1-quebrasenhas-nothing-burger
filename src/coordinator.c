@@ -254,7 +254,41 @@ if (workers_with_success > 0) {
     // - Fazer parse do formato "worker_id:password"
     // - Verificar o hash usando md5_string()
     // - Exibir resultado encontrado
-    
+    if (password_found) {
+        FILE *result_file = fopen(RESULT_FILE, "r");
+        if (result_file != NULL) {
+            char line[512];
+            if (fgets(line, sizeof(line), result_file) != NULL) {
+                line[strcspn(line, "\n")] = '\0';
+                
+                char *colon = strchr(line, ':');
+                if (colon != NULL) {
+                    *colon = '\0';
+                    int worker_id = atoi(line);
+                    char *found_password = colon + 1;
+                    char computed_hash[33];
+                    md5_string(found_password, computed_hash);
+                    
+                    printf("senha achada\n");
+                    printf("worker: %d\n", worker_id);
+                    printf("senha: %s\n", found_password);
+                    printf("hash md5: %s\n", computed_hash);
+                    
+                    if (strcmp(computed_hash, target_hash) == 0) {
+                        printf("hash equivalente\n");
+                    } else {
+                        printf("hash não equivalente\n");
+                    }
+                } 
+            }
+            fclose(result_file);
+        } else {
+            printf("falha em abrir o arquivo.\n");
+        }
+    } else {
+        printf("senha não encontrada.\n");
+    }
+
     // Estatísticas finais (opcional)
     // TODO: Calcular e exibir estatísticas de performance
     
