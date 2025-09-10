@@ -148,32 +148,62 @@ int main(int argc, char *argv[]) {
     while (1) {
         // TODO 3: Verificar periodicamente se outro worker já encontrou a senha
         // DICA: A cada PROGRESS_INTERVAL senhas, verificar se arquivo resultado existe
+        if (passwords_checked > 0 && passwords_checked % PROGRESS_INTERVAL == 0) {
+            // verificar se outro worker já encontrou
+            if (check_result_exists()) {
+                printf("Worker %d: detectado resultado de outro worker, encerrando\n", worker_id);
+                return 1; 
+            }
+            
+            // reportar
+            time_t current_time = time(NULL);
+            double elapsed = difftime(current_time, last_progress_time);
+            if (elapsed > 0) {
+                printf("Worker %d: %lld senhas verificadas (%.0f/s)\n", 
+                       worker_id, passwords_checked, PROGRESS_INTERVAL / elapsed);
+            }
+            last_progress_time = current_time;
+        }
         
         // TODO 4: Calcular o hash MD5 da senha atual
         // IMPORTANTE: Use a biblioteca MD5 FORNECIDA - md5_string(senha, hash_buffer)
+        md5_string(current_password, computed_hash);
         
         // TODO 5: Comparar com o hash alvo
         // Se encontrou: salvar resultado e terminar
+        if (strcmp(computed_hash, target_hash) == 0) {
+            // encontrou
+            printf("Worker %d: SENHA ENCONTRADA: %s\n", worker_id, current_password);
+            save_result(worker_id, current_password);
+            return 0;  // sucesso
+        }
+        
+        // verificar se chegou ao fim do intervalo
+        if (password_compare(current_password, end_password) >= 0) {
+            break;
+        }
         
         // TODO 6: Incrementar para a próxima senha
         // DICA: Use a função increment_password implementada acima
-        
-        // TODO: Verificar se chegou ao fim do intervalo
-        // Se sim: terminar loop
+        if (!increment_password(current_password, charset, charset_len, password_len)) {
+            // overflow
+            fprintf(stderr, "Worker %d: erro ao incrementar senha\n", worker_id);
+            break;
+        }
         
         passwords_checked++;
     }
     
-    // Estatísticas finais
+    // estatísticas
     time_t end_time = time(NULL);
     double total_time = difftime(end_time, start_time);
     
-    printf("[Worker %d] Finalizado. Total: %lld senhas em %.2f segundos", 
+    printf("Worker %d: finalizado. Total: %lld senhas em %.2f segundos", 
            worker_id, passwords_checked, total_time);
     if (total_time > 0) {
         printf(" (%.0f senhas/s)", passwords_checked / total_time);
     }
     printf("\n");
     
-    return 0;
+    return 1;  // não encontrou
 }
